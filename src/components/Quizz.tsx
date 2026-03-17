@@ -18,7 +18,7 @@ export default function QuizzComponent() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch("/data/regions.geojson");
+        const res = await fetch(`${import.meta.env.BASE_URL}data/regions.geojson`);
         if (!res.ok) throw new Error("Échec du chargement");
         const data = (await res.json()) as RegionsFC;
         setGeo(data);
