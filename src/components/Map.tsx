@@ -1,14 +1,12 @@
 import { geoMercator, geoPath } from "d3-geo";
 import { select } from "d3-selection";
 import type { FeatureCollection, Geometry } from "geojson";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RegionProps, RegionsFC } from "../types/regions.type";
 
 type MapProps = {
   geo?: RegionsFC;
   onRegionSelect: (payload: RegionProps) => void;
-  width?: number;
-  height?: number;
   primaryColor?: string;
   hoverColor?: string;
 };
@@ -16,17 +14,30 @@ type MapProps = {
 export default function MapComponent({
   geo,
   onRegionSelect,
-  width = 800,
-  height = 600,
   primaryColor = "#03224c",
   hoverColor = "#0172ad",
 }: MapProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 1450, height: 459.5 });
+
+  // Met à jour les dimensions quand la fenêtre est redimensionnée
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({ width, height });
+      }
+    });
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const projection = useMemo(() => {
-    if (!geo) return null;
-    return geoMercator().fitSize([width, height], geo);
-  }, [geo, width, height]);
+    if (!geo || !dimensions.width || !dimensions.height) return null;
+    return geoMercator().fitSize([dimensions.width, dimensions.height], geo);
+  }, [geo, dimensions.width, dimensions.height]);
 
   const path = useMemo(() => {
     if (!projection) return null;
@@ -34,11 +45,19 @@ export default function MapComponent({
   }, [projection]);
 
   useEffect(() => {
-    if (!svgRef.current || !geo || !projection || !path) return;
+    if (
+      !svgRef.current ||
+      !geo ||
+      !projection ||
+      !path ||
+      !dimensions.width ||
+      !dimensions.height
+    )
+      return;
 
     const svg = select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height)
+      .attr("width", dimensions.width)
+      .attr("height", dimensions.height)
       .style("background-color", "#fff");
     svg.selectAll("*").remove();
 
@@ -65,19 +84,21 @@ export default function MapComponent({
   }, [
     geo,
     onRegionSelect,
-    width,
-    height,
     primaryColor,
     hoverColor,
     projection,
     path,
+    dimensions.width,
+    dimensions.height,
   ]);
 
   return (
-    <svg
-      ref={svgRef}
-      role="img"
-      aria-label="Carte interactive des régions"
-    ></svg>
+    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+      <svg
+        ref={svgRef}
+        role="img"
+        aria-label="Carte interactive des régions"
+      ></svg>
+    </div>
   );
 }

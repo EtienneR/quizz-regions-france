@@ -18,7 +18,9 @@ export default function QuizzComponent() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${import.meta.env.BASE_URL}data/regions.geojson`);
+        const res = await fetch(
+          `${import.meta.env.BASE_URL}data/regions.geojson`,
+        );
         if (!res.ok) throw new Error("Échec du chargement");
         const data = (await res.json()) as RegionsFC;
         setGeo(data);
@@ -119,7 +121,7 @@ export default function QuizzComponent() {
             </p>
           )}
           {geo && (
-            <div style={{ display: "flex", justifyContent: "center" }}>
+            <div style={{ width: "100%", height: "50vh" }}>
               <MapComponent geo={geo} onRegionSelect={handleRegionSelect} />
             </div>
           )}
